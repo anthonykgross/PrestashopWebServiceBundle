@@ -17,7 +17,13 @@
     "autoload": {
         "psr-0": { "KkuetNet\\PrestashopWebServiceBundle": "" }
     },
-    "target-dir": "KkuetNet/PrestashopWebServiceBundle"
+    "target-dir": "KkuetNet/PrestashopWebServiceBundle",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/PrestaShop/PrestaShop-webservice-lib.git"
+        }
+    ]
 }
 
 

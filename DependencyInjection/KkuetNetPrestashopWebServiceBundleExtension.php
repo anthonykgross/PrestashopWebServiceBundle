@@ -23,7 +23,7 @@ class ActivpikOAuthClientExtension extends Extension
         $config = $this->processConfiguration($configuration, $configs);
 
         foreach($config as $k => $v){
-            $container->setParameter('activpik_o_auth_client.'.$k, $v);
+            $container->setParameter('kkuet_net_prestashop_web_service.'.$k, $v);
         }
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yml');

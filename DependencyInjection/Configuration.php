@@ -18,7 +18,7 @@ class Configuration implements ConfigurationInterface
     public function getConfigTreeBuilder()
     {
         $treeBuilder = new TreeBuilder();
-        $rootNode = $treeBuilder->root('activpik_o_auth_client');
+        $rootNode = $treeBuilder->root('kkuet_net_prestashop_web_service');
         return $treeBuilder;
     }
 }
