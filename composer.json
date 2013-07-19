@@ -1,0 +1,23 @@
+{
+    "name": "kkuetnet/prestashopwebservice-bundle",
+    "description": "Prestashop WebService bundle for Symfony 2",
+    "keywords": ["prestashop","webservice","bundle"],
+    "type": "symfony-bundle",
+    "license": "Commercial",
+    "authors": [
+        {
+            "name": "Anthony GROSS",
+            "email": "anthony_gross@kkuet.net"
+        }
+    ],
+    "require": {
+        "symfony/framework-bundle": "2.*",
+        "twig/twig": "1.*"
+    },
+    "autoload": {
+        "psr-0": { "KkuetNet\\PrestashopWebServiceBundle": "" }
+    },
+    "target-dir": "KkuetNet/PrestashopWebServiceBundle"
+}
+
+
