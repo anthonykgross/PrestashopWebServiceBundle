@@ -16,7 +16,8 @@ class PrestashopWebService{
         if(is_null($this->instance)){
             $this->instance =  new \KkuetNet\PrestashopWebServiceBundle\Vendor\PrestaShopWebservice(
                 $this->container->getParameter('kkuet_net_prestashop_web_service.website'),
-                $this->container->getParameter('kkuet_net_prestashop_web_service.key')
+                $this->container->getParameter('kkuet_net_prestashop_web_service.key'),
+                $this->container->getParameter('kkuet_net_prestashop_web_service.debug')
             );
         }
         return $this->instance;

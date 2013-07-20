@@ -21,6 +21,7 @@ class Configuration implements ConfigurationInterface
         $rootNode = $treeBuilder->root('kkuet_net_prestashop_web_service');
         $rootNode
             ->children()
+                ->scalarNode('debug')->defaultFalse()->end()
                 ->scalarNode('website')->isRequired()->cannotBeEmpty()->end()
                 ->scalarNode('key')->isRequired()->cannotBeEmpty()->end()
             ->end();

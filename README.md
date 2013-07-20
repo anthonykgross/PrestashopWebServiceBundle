@@ -53,6 +53,7 @@ public function registerBundles()
 ``` yaml
 # app/config/config.yml
 kkuet_net_prestashop_web_service:
+  debug: false
   website: http://prestashop.kkuet.net/
   key: R03J6M0Z87H9P2ZRHTTPE72MU6RU34AB
 ```
