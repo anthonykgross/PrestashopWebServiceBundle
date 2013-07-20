@@ -1,4 +1,4 @@
-Getting Started With KkuetNetPrestashopWebServiceBundle
+Getting Started
 ==================================
 
 This bundle allow you to integrate easily Prestashop API into your symfony project.
@@ -9,11 +9,12 @@ This version of the bundle requires Symfony 2.1+.
 
 ## Installation
 
-Installation is a quick (I promise!) 7 step process:
+Installation is a quick 4 step process:
 
 1. Download KkuetNetPrestashopWebServiceBundle using composer
 2. Enable the Bundle
 3. Configure the KkuetNetPrestashopWebServiceBundle
+4. How to use
 
 ### Step 1: Download KkuetNetPrestashopWebServiceBundle using composer
 
@@ -48,7 +49,7 @@ public function registerBundles()
 
 ### Step 3: Configure the KkuetNetPrestashopWebServiceBundle
 
-[More information about Prestashop API](https://github.com/kkuetnet/PrestashopWebServiceBundle/blob/master/Resources/doc/webservice.pdf)
+[More information about Prestashop API](http://doc.prestashop.com/download/attachments/720902/CRUD%20Tutorial%20EN.pdf)
 ``` yaml
 # app/config/config.yml
 kkuet_net_prestashop_web_service:
@@ -56,7 +57,7 @@ kkuet_net_prestashop_web_service:
   key: R03J6M0Z87H9P2ZRHTTPE72MU6RU34AB
 ```
 
-### Step 4: HOW TO USE
+### Step 4: How to use
 
 ``` php
 namespace Acme\DemoBundle\Controller;
@@ -71,7 +72,7 @@ class WelcomeController extends Controller
         $result = $persta->get(array(
             "resource" => "products"
         ));
-        
+        #More information => http://doc.prestashop.com/download/attachments/720902/CRUD%20Tutorial%20EN.pdf
         var_dump($result);
     }
 }
