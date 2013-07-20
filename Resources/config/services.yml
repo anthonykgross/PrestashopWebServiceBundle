@@ -1,4 +1,4 @@
-#services:
-#    prestashop_webservice:
-#        class: KkuetNet\PrestashoWebServiceBundle\Services\OAuthToken
-#        arguments: [@service_container]
+services:
+  prestashop_webservice:
+    class: KkuetNet\PrestashopWebServiceBundle\Services\PrestashopWebService
+    arguments: [@service_container]
