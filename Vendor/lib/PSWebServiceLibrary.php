@@ -34,17 +34,17 @@ class PrestaShopWebservice
 
 	/** @var string Shop URL */
 	protected $url;
-	
+
 	/** @var string Authentification key */
 	protected $key;
-	
+
 	/** @var boolean is debug activated */
 	protected $debug;
-	
+
 	/** @var array compatible versions of PrestaShop Webservice */
 	const psCompatibleVersionsMin = '1.4.0.17';
-	const psCompatibleVersionsMax = '1.5.4.1';
-	
+	const psCompatibleVersionsMax = '1.6.0.5';
+
 	/**
 	 * PrestaShopWebservice constructor. Throw an exception when CURL is not installed/activated
 	 * <code>
@@ -66,13 +66,15 @@ class PrestaShopWebservice
 	 * @param mixed $debug Debug mode Activated (true) or deactivated (false)
 	*/
 	function __construct($url, $key, $debug = true) {
+		echo "hola que tal";
 		if (!extension_loaded('curl'))
 		  throw new PrestaShopWebserviceException('Please activate the PHP extension \'curl\' to allow use of PrestaShop webservice library');
 		$this->url = $url;
 		$this->key = $key;
 		$this->debug = $debug;
+
 	}
-	
+
 	/**
 	 * Take the status code and throw an exception if the server didn't return 200 or 201 code
 	 * @param int $status_code Status code of an HTTP return
@@ -108,7 +110,7 @@ class PrestaShopWebservice
 			CURLOPT_USERPWD => $this->key.':',
 			CURLOPT_HTTPHEADER => array( 'Expect:' )
 		);
-		
+
 		$session = curl_init($url);
 
 		$curl_options = array();
@@ -129,12 +131,12 @@ class PrestaShopWebservice
 		$index = strpos($response, "\r\n\r\n");
 		if ($index === false && $curl_params[CURLOPT_CUSTOMREQUEST] != 'HEAD')
 			throw new PrestaShopWebserviceException('Bad HTTP response');
-		
+
 		$header = substr($response, 0, $index);
 		$body = substr($response, $index + 4);
-		
+
 		$headerArrayTmp = explode("\n", $header);
-		
+
 		$headerArray = array();
 		foreach ($headerArrayTmp as &$headerItem)
 		{
@@ -143,7 +145,7 @@ class PrestaShopWebservice
 			if (count($tmp) == 2)
 				$headerArray[$tmp[0]] = $tmp[1];
 		}
-		
+
 		if (array_key_exists('PSWS-Version', $headerArray))
 		{
 			if (
@@ -152,12 +154,12 @@ class PrestaShopWebservice
 			)
 			throw new PrestaShopWebserviceException('This library is not compatible with this version of PrestaShop. Please upgrade/downgrade this library');
 		}
-		
+
 		if ($this->debug)
 		{
 			$this->printDebug('HTTP REQUEST HEADER', curl_getinfo($session, CURLINFO_HEADER_OUT));
 			$this->printDebug('HTTP RESPONSE HEADER', $header);
-			
+
 		}
 		$status_code = curl_getinfo($session, CURLINFO_HTTP_CODE);
 		if ($status_code === 0)
@@ -188,13 +190,17 @@ class PrestaShopWebservice
 			libxml_use_internal_errors(true);
 			$xml = simplexml_load_string($response);
 			if (libxml_get_errors())
-				throw new PrestaShopWebserviceException('HTTP XML response is not parsable : '.var_export(libxml_get_errors(), true));
+			{
+				$msg = var_export(libxml_get_errors(), true);
+				libxml_clear_errors();
+				throw new PrestaShopWebserviceException('HTTP XML response is not parsable: '.$msg);
+			}
 			return $xml;
 		}
 		else
 			throw new PrestaShopWebserviceException('HTTP response is empty');
 	}
-	
+
 	/**
 	 * Add (POST) a resource
 	 * <p>Unique parameter must take : <br><br>
@@ -259,7 +265,7 @@ class PrestaShopWebservice
 			$url_params = array();
 			if (isset($options['id']))
 				$url .= '/'.$options['id'];
-				
+
 			$params = array('filter', 'display', 'sort', 'limit');
 			foreach ($params as $p)
 				foreach ($options as $k => $o)
@@ -270,9 +276,9 @@ class PrestaShopWebservice
 		}
 		else
 			throw new PrestaShopWebserviceException('Bad parameters given');
-		
+
 		$request = self::executeRequest($url, array(CURLOPT_CUSTOMREQUEST => 'GET'));
-		
+
 		self::checkStatusCode($request['status_code']);// check the response validity
 		return self::parseXML($request['response']);
 	}
@@ -293,7 +299,7 @@ class PrestaShopWebservice
 			$url_params = array();
 			if (isset($options['id']))
 				$url .= '/'.$options['id'];
-				
+
 			$params = array('filter', 'display', 'sort', 'limit');
 			foreach ($params as $p)
 				foreach ($options as $k => $o)
@@ -329,7 +335,7 @@ class PrestaShopWebservice
 		}
 		else
 			throw new PrestaShopWebserviceException('Bad parameters given');
-		
+
 		$request = self::executeRequest($url,  array(CURLOPT_CUSTOMREQUEST => 'PUT', CURLOPT_POSTFIELDS => $xml));
 		self::checkStatusCode($request['status_code']);// check the response validity
 		return self::parseXML($request['response']);
@@ -371,7 +377,7 @@ class PrestaShopWebservice
 		self::checkStatusCode($request['status_code']);// check the response validity
 		return true;
 	}
-	
+
 
 }
 
@@ -379,4 +385,3 @@ class PrestaShopWebservice
  * @package PrestaShopWebservice
  */
 class PrestaShopWebserviceException extends Exception { }
-
