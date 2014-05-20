@@ -9,7 +9,7 @@ class PrestashopWebService{
     
     public function __construct($container){
         $this->container = $container;
-        $this->em        = $container->get('doctrine')->getEntityManager();
+        $this->em        = $container->get('doctrine')->getManager();
     }
     
     public function getInstance(){
