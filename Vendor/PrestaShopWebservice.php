@@ -188,8 +188,8 @@ class PrestaShopWebservice
 	{
 		if ($response != '')
 		{
-			libxml_use_internal_errors(true, null, LIBXML_NOCDATA);
-			$xml = simplexml_load_string($response,'SimpleXMLElement', LIBXML_NOCDATA);
+			libxml_use_internal_errors(true);
+			$xml = simplexml_load_string($response);
 			if (libxml_get_errors())
 			{
 				$msg = var_export(libxml_get_errors(), true);
