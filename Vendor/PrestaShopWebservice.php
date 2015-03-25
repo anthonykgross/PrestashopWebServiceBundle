@@ -27,13 +27,11 @@ namespace KkuetNet\PrestashopWebServiceBundle\Vendor;
 * PrestaShop Webservice Library
 * @package PrestaShopWebservice
 */
-
 /**
  * @package PrestaShopWebservice
  */
 class PrestaShopWebservice
 {
-
 	/** @var string Shop URL */
 	protected $url;
 
@@ -43,8 +41,10 @@ class PrestaShopWebservice
 	/** @var boolean is debug activated */
 	protected $debug;
 
+	/** @var string PS version */
+	protected $version;
 	/** @var array compatible versions of PrestaShop Webservice */
-	const psCompatibleVersionsMin = '1.4.0.17';
+	const psCompatibleVersionsMin = '1.4.0.0';
 	const psCompatibleVersionsMax = '1.6.0.14';
 
 	/**
@@ -73,7 +73,7 @@ class PrestaShopWebservice
 		$this->url = $url;
 		$this->key = $key;
 		$this->debug = $debug;
-
+		$this->version = 'unknown';
 	}
 
 	/**
@@ -109,12 +109,10 @@ class PrestaShopWebservice
 			CURLINFO_HEADER_OUT => TRUE,
 			CURLOPT_HTTPAUTH => CURLAUTH_BASIC,
 			CURLOPT_USERPWD => $this->key.':',
-			CURLOPT_VERBOSE => TRUE, //afegits
 			CURLOPT_HTTPHEADER => array( 'Expect:' )
 		);
 
 		$session = curl_init($url);
-
 		$curl_options = array();
 		foreach ($defaultParams as $defkey => $defval)
 		{
@@ -126,10 +124,8 @@ class PrestaShopWebservice
 		foreach ($curl_params as $defkey => $defval)
 			if (!isset($curl_options[$defkey]))
 				$curl_options[$defkey] = $curl_params[$defkey];
-
 		curl_setopt_array($session, $curl_options);
 		$response = curl_exec($session);
-
 		$index = strpos($response, "\r\n\r\n");
 		if ($index === false && $curl_params[CURLOPT_CUSTOMREQUEST] != 'HEAD')
 			throw new PrestaShopWebserviceException('Bad HTTP response');
@@ -150,6 +146,7 @@ class PrestaShopWebservice
 
 		if (array_key_exists('PSWS-Version', $headerArray))
 		{
+			$this->version = $headerArray['PSWS-Version'];
 			if (
 				version_compare(PrestaShopWebservice::psCompatibleVersionsMin, $headerArray['PSWS-Version']) == 1 ||
 				version_compare(PrestaShopWebservice::psCompatibleVersionsMax, $headerArray['PSWS-Version']) == -1
@@ -170,7 +167,7 @@ class PrestaShopWebservice
 		if ($this->debug)
 		{
 			if ($curl_params[CURLOPT_CUSTOMREQUEST] == 'PUT' || $curl_params[CURLOPT_CUSTOMREQUEST] == 'POST')
-				$this->printDebug('XML SENT', $curl_params[CURLOPT_POSTFIELDS]);
+				$this->printDebug('XML SENT', urldecode($curl_params[CURLOPT_POSTFIELDS]));
 			if ($curl_params[CURLOPT_CUSTOMREQUEST] != 'DELETE' && $curl_params[CURLOPT_CUSTOMREQUEST] != 'HEAD')
 				$this->printDebug('RETURN HTTP BODY', $body);
 		}
@@ -179,6 +176,10 @@ class PrestaShopWebservice
 	public function printDebug($title, $content)
 	{
 		echo '<div style="display:table;background:#CCC;font-size:8pt;padding:7px"><h6 style="font-size:9pt;margin:0">'.$title.'</h6><pre>'.htmlentities($content).'</pre></div>';
+	}
+	public function getVersion()
+	{
+		return $this->version;
 	}
 	/**
 	 * Load XML from string. Can throw exception
@@ -215,20 +216,21 @@ class PrestaShopWebservice
 	public function add($options)
 	{
 		$xml = '';
-
 		if (isset($options['resource'], $options['postXml']) || isset($options['url'], $options['postXml']))
 		{
 			$url = (isset($options['resource']) ? $this->url.'/api/'.$options['resource'] : $options['url']);
 			$xml = $options['postXml'];
+			if (isset($options['id_shop']))
+				$url .= '&id_shop='.$options['id_shop'];
+			if (isset($options['id_group_shop']))
+				$url .= '&id_group_shop='.$options['id_group_shop'];
 		}
 		else
 			throw new PrestaShopWebserviceException('Bad parameters given');
-		$request = self::executeRequest($url, array(CURLOPT_CUSTOMREQUEST => 'POST', CURLOPT_POSTFIELDS => 'xml='.urlencode($xml)));
-
+		$request = self::executeRequest($url, array(CURLOPT_CUSTOMREQUEST => 'POST', CURLOPT_POSTFIELDS => $xml));
 		self::checkStatusCode($request['status_code']);
 		return self::parseXML($request['response']);
 	}
-
 	/**
  	 * Retrieve (GET) a resource
 	 * <p>Unique parameter must take : <br><br>
@@ -268,7 +270,7 @@ class PrestaShopWebservice
 			if (isset($options['id']))
 				$url .= '/'.$options['id'];
 
-			$params = array('filter', 'display', 'sort', 'limit', 'id_shop');
+			$params = array('filter', 'display', 'sort', 'limit', 'id_shop', 'id_group_shop');
 			foreach ($params as $p)
 				foreach ($options as $k => $o)
 					if (strpos($k, $p) !== false)
@@ -284,7 +286,6 @@ class PrestaShopWebservice
 		self::checkStatusCode($request['status_code']);// check the response validity
 		return self::parseXML($request['response']);
 	}
-
 	/**
  	 * Head method (HEAD) a resource
 	 *
@@ -302,7 +303,7 @@ class PrestaShopWebservice
 			if (isset($options['id']))
 				$url .= '/'.$options['id'];
 
-			$params = array('filter', 'display', 'sort', 'limit', 'id_shop');
+			$params = array('filter', 'display', 'sort', 'limit');
 			foreach ($params as $p)
 				foreach ($options as $k => $o)
 					if (strpos($k, $p) !== false)
@@ -334,6 +335,10 @@ class PrestaShopWebservice
 		{
 			$url = (isset($options['url']) ? $options['url'] : $this->url.'/api/'.$options['resource'].'/'.$options['id']);
 			$xml = $options['putXml'];
+			if (isset($options['id_shop']))
+				$url .= '&id_shop='.$options['id_shop'];
+			if (isset($options['id_group_shop']))
+				$url .= '&id_group_shop='.$options['id_group_shop'];
 		}
 		else
 			throw new PrestaShopWebserviceException('Bad parameters given');
@@ -342,7 +347,6 @@ class PrestaShopWebservice
 		self::checkStatusCode($request['status_code']);// check the response validity
 		return self::parseXML($request['response']);
 	}
-
 	/**
 	 * Delete (DELETE) a resource.
 	 * Unique parameter must take : <br><br>
@@ -375,16 +379,17 @@ class PrestaShopWebservice
 				$url = $this->url.'/api/'.$options['resource'].'/?id=['.implode(',', $options['id']).']';
 			else
 				$url = $this->url.'/api/'.$options['resource'].'/'.$options['id'];
+		if (isset($options['id_shop']))
+			$url .= '&id_shop='.$options['id_shop'];
+		if (isset($options['id_group_shop']))
+			$url .= '&id_group_shop='.$options['id_group_shop'];
 		$request = self::executeRequest($url, array(CURLOPT_CUSTOMREQUEST => 'DELETE'));
 		self::checkStatusCode($request['status_code']);// check the response validity
 		return true;
 	}
 
-
 }
-
 /**
  * @package PrestaShopWebservice
  */
-class PrestaShopWebserviceException extends \Exception { }
-
+class PrestaShopWebserviceException extends Exception { }
