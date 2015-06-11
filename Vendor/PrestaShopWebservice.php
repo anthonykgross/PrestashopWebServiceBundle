@@ -27,26 +27,26 @@ namespace KkuetNet\PrestashopWebServiceBundle\Vendor;
 * PrestaShop Webservice Library
 * @package PrestaShopWebservice
 */
-
 /**
  * @package PrestaShopWebservice
  */
 class PrestaShopWebservice
 {
-
 	/** @var string Shop URL */
 	protected $url;
-	
+
 	/** @var string Authentification key */
 	protected $key;
-	
+
 	/** @var boolean is debug activated */
 	protected $debug;
-	
+
+	/** @var string PS version */
+	protected $version;
 	/** @var array compatible versions of PrestaShop Webservice */
-	const psCompatibleVersionsMin = '1.4.0.17';
-	const psCompatibleVersionsMax = '1.5.4.1';
-	
+	const psCompatibleVersionsMin = '1.4.0.0';
+	const psCompatibleVersionsMax = '1.6.0.14';
+
 	/**
 	 * PrestaShopWebservice constructor. Throw an exception when CURL is not installed/activated
 	 * <code>
@@ -73,8 +73,9 @@ class PrestaShopWebservice
 		$this->url = $url;
 		$this->key = $key;
 		$this->debug = $debug;
+		$this->version = 'unknown';
 	}
-	
+
 	/**
 	 * Take the status code and throw an exception if the server didn't return 200 or 201 code
 	 * @param int $status_code Status code of an HTTP return
@@ -110,9 +111,8 @@ class PrestaShopWebservice
 			CURLOPT_USERPWD => $this->key.':',
 			CURLOPT_HTTPHEADER => array( 'Expect:' )
 		);
-		
-		$session = curl_init($url);
 
+		$session = curl_init($url);
 		$curl_options = array();
 		foreach ($defaultParams as $defkey => $defval)
 		{
@@ -124,19 +124,17 @@ class PrestaShopWebservice
 		foreach ($curl_params as $defkey => $defval)
 			if (!isset($curl_options[$defkey]))
 				$curl_options[$defkey] = $curl_params[$defkey];
-
 		curl_setopt_array($session, $curl_options);
 		$response = curl_exec($session);
-
 		$index = strpos($response, "\r\n\r\n");
 		if ($index === false && $curl_params[CURLOPT_CUSTOMREQUEST] != 'HEAD')
 			throw new PrestaShopWebserviceException('Bad HTTP response');
-		
+
 		$header = substr($response, 0, $index);
 		$body = substr($response, $index + 4);
-		
+
 		$headerArrayTmp = explode("\n", $header);
-		
+
 		$headerArray = array();
 		foreach ($headerArrayTmp as &$headerItem)
 		{
@@ -145,21 +143,22 @@ class PrestaShopWebservice
 			if (count($tmp) == 2)
 				$headerArray[$tmp[0]] = $tmp[1];
 		}
-		
+
 		if (array_key_exists('PSWS-Version', $headerArray))
 		{
+			$this->version = $headerArray['PSWS-Version'];
 			if (
 				version_compare(PrestaShopWebservice::psCompatibleVersionsMin, $headerArray['PSWS-Version']) == 1 ||
 				version_compare(PrestaShopWebservice::psCompatibleVersionsMax, $headerArray['PSWS-Version']) == -1
 			)
 			throw new PrestaShopWebserviceException('This library is not compatible with this version of PrestaShop. Please upgrade/downgrade this library');
 		}
-		
+
 		if ($this->debug)
 		{
 			$this->printDebug('HTTP REQUEST HEADER', curl_getinfo($session, CURLINFO_HEADER_OUT));
 			$this->printDebug('HTTP RESPONSE HEADER', $header);
-			
+
 		}
 		$status_code = curl_getinfo($session, CURLINFO_HTTP_CODE);
 		if ($status_code === 0)
@@ -168,7 +167,7 @@ class PrestaShopWebservice
 		if ($this->debug)
 		{
 			if ($curl_params[CURLOPT_CUSTOMREQUEST] == 'PUT' || $curl_params[CURLOPT_CUSTOMREQUEST] == 'POST')
-				$this->printDebug('XML SENT', $curl_params[CURLOPT_POSTFIELDS]);
+				$this->printDebug('XML SENT', urldecode($curl_params[CURLOPT_POSTFIELDS]));
 			if ($curl_params[CURLOPT_CUSTOMREQUEST] != 'DELETE' && $curl_params[CURLOPT_CUSTOMREQUEST] != 'HEAD')
 				$this->printDebug('RETURN HTTP BODY', $body);
 		}
@@ -177,6 +176,10 @@ class PrestaShopWebservice
 	public function printDebug($title, $content)
 	{
 		echo '<div style="display:table;background:#CCC;font-size:8pt;padding:7px"><h6 style="font-size:9pt;margin:0">'.$title.'</h6><pre>'.htmlentities($content).'</pre></div>';
+	}
+	public function getVersion()
+	{
+		return $this->version;
 	}
 	/**
 	 * Load XML from string. Can throw exception
@@ -190,13 +193,17 @@ class PrestaShopWebservice
 			libxml_use_internal_errors(true);
 			$xml = simplexml_load_string($response);
 			if (libxml_get_errors())
-				throw new PrestaShopWebserviceException('HTTP XML response is not parsable : '.var_export(libxml_get_errors(), true));
+			{
+				$msg = var_export(libxml_get_errors(), true);
+				libxml_clear_errors();
+				throw new PrestaShopWebserviceException('HTTP XML response is not parsable: '.$msg);
+			}
 			return $xml;
 		}
 		else
 			throw new PrestaShopWebserviceException('HTTP response is empty');
 	}
-	
+
 	/**
 	 * Add (POST) a resource
 	 * <p>Unique parameter must take : <br><br>
@@ -209,20 +216,21 @@ class PrestaShopWebservice
 	public function add($options)
 	{
 		$xml = '';
-
 		if (isset($options['resource'], $options['postXml']) || isset($options['url'], $options['postXml']))
 		{
 			$url = (isset($options['resource']) ? $this->url.'/api/'.$options['resource'] : $options['url']);
 			$xml = $options['postXml'];
+			if (isset($options['id_shop']))
+				$url .= '&id_shop='.$options['id_shop'];
+			if (isset($options['id_group_shop']))
+				$url .= '&id_group_shop='.$options['id_group_shop'];
 		}
 		else
 			throw new PrestaShopWebserviceException('Bad parameters given');
-		$request = self::executeRequest($url, array(CURLOPT_CUSTOMREQUEST => 'POST', CURLOPT_POSTFIELDS => 'xml='.$xml));
-
+		$request = self::executeRequest($url, array(CURLOPT_CUSTOMREQUEST => 'POST', CURLOPT_POSTFIELDS => $xml));
 		self::checkStatusCode($request['status_code']);
 		return self::parseXML($request['response']);
 	}
-
 	/**
  	 * Retrieve (GET) a resource
 	 * <p>Unique parameter must take : <br><br>
@@ -261,8 +269,8 @@ class PrestaShopWebservice
 			$url_params = array();
 			if (isset($options['id']))
 				$url .= '/'.$options['id'];
-				
-			$params = array('filter', 'display', 'sort', 'limit');
+
+			$params = array('filter', 'display', 'sort', 'limit', 'id_shop', 'id_group_shop');
 			foreach ($params as $p)
 				foreach ($options as $k => $o)
 					if (strpos($k, $p) !== false)
@@ -272,13 +280,12 @@ class PrestaShopWebservice
 		}
 		else
 			throw new PrestaShopWebserviceException('Bad parameters given');
-		
+
 		$request = self::executeRequest($url, array(CURLOPT_CUSTOMREQUEST => 'GET'));
-		
+
 		self::checkStatusCode($request['status_code']);// check the response validity
 		return self::parseXML($request['response']);
 	}
-
 	/**
  	 * Head method (HEAD) a resource
 	 *
@@ -295,7 +302,7 @@ class PrestaShopWebservice
 			$url_params = array();
 			if (isset($options['id']))
 				$url .= '/'.$options['id'];
-				
+
 			$params = array('filter', 'display', 'sort', 'limit');
 			foreach ($params as $p)
 				foreach ($options as $k => $o)
@@ -328,15 +335,18 @@ class PrestaShopWebservice
 		{
 			$url = (isset($options['url']) ? $options['url'] : $this->url.'/api/'.$options['resource'].'/'.$options['id']);
 			$xml = $options['putXml'];
+			if (isset($options['id_shop']))
+				$url .= '&id_shop='.$options['id_shop'];
+			if (isset($options['id_group_shop']))
+				$url .= '&id_group_shop='.$options['id_group_shop'];
 		}
 		else
 			throw new PrestaShopWebserviceException('Bad parameters given');
-		
+
 		$request = self::executeRequest($url,  array(CURLOPT_CUSTOMREQUEST => 'PUT', CURLOPT_POSTFIELDS => $xml));
 		self::checkStatusCode($request['status_code']);// check the response validity
 		return self::parseXML($request['response']);
 	}
-
 	/**
 	 * Delete (DELETE) a resource.
 	 * Unique parameter must take : <br><br>
@@ -369,16 +379,17 @@ class PrestaShopWebservice
 				$url = $this->url.'/api/'.$options['resource'].'/?id=['.implode(',', $options['id']).']';
 			else
 				$url = $this->url.'/api/'.$options['resource'].'/'.$options['id'];
+		if (isset($options['id_shop']))
+			$url .= '&id_shop='.$options['id_shop'];
+		if (isset($options['id_group_shop']))
+			$url .= '&id_group_shop='.$options['id_group_shop'];
 		$request = self::executeRequest($url, array(CURLOPT_CUSTOMREQUEST => 'DELETE'));
 		self::checkStatusCode($request['status_code']);// check the response validity
 		return true;
 	}
-	
 
 }
-
 /**
  * @package PrestaShopWebservice
  */
 class PrestaShopWebserviceException extends \Exception { }
-
