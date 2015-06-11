@@ -40,7 +40,6 @@ class PrestaShopWebservice
 
 	/** @var boolean is debug activated */
 	protected $debug;
-<<<<<<< HEAD
 
 	/** @var string PS version */
 	protected $version;
@@ -48,16 +47,6 @@ class PrestaShopWebservice
 	const psCompatibleVersionsMin = '1.4.0.0';
 	const psCompatibleVersionsMax = '1.6.0.14';
 
-=======
-	
-	/** @var string PS version */
-	protected $version;
-
-	/** @var array compatible versions of PrestaShop Webservice */
-	const psCompatibleVersionsMin = '1.4.0.0';
-	const psCompatibleVersionsMax = '1.6.0.14';
-	
->>>>>>> e3d1841005371841fd969a07bdba741ba73a7094
 	/**
 	 * PrestaShopWebservice constructor. Throw an exception when CURL is not installed/activated
 	 * <code>
@@ -184,23 +173,14 @@ class PrestaShopWebservice
 		}
 		return array('status_code' => $status_code, 'response' => $body, 'header' => $header);
 	}
-
 	public function printDebug($title, $content)
 	{
 		echo '<div style="display:table;background:#CCC;font-size:8pt;padding:7px"><h6 style="font-size:9pt;margin:0">'.$title.'</h6><pre>'.htmlentities($content).'</pre></div>';
 	}
-<<<<<<< HEAD
-=======
-
->>>>>>> e3d1841005371841fd969a07bdba741ba73a7094
 	public function getVersion()
 	{
 		return $this->version;
 	}
-<<<<<<< HEAD
-=======
-
->>>>>>> e3d1841005371841fd969a07bdba741ba73a7094
 	/**
 	 * Load XML from string. Can throw exception
 	 * @param string $response String from a CURL response
@@ -210,9 +190,8 @@ class PrestaShopWebservice
 	{
 		if ($response != '')
 		{
-			libxml_clear_errors();
 			libxml_use_internal_errors(true);
-			$xml = simplexml_load_string($response,'SimpleXMLElement', LIBXML_NOCDATA);
+			$xml = simplexml_load_string($response);
 			if (libxml_get_errors())
 			{
 				$msg = var_export(libxml_get_errors(), true);
@@ -249,10 +228,6 @@ class PrestaShopWebservice
 		else
 			throw new PrestaShopWebserviceException('Bad parameters given');
 		$request = self::executeRequest($url, array(CURLOPT_CUSTOMREQUEST => 'POST', CURLOPT_POSTFIELDS => $xml));
-<<<<<<< HEAD
-=======
-
->>>>>>> e3d1841005371841fd969a07bdba741ba73a7094
 		self::checkStatusCode($request['status_code']);
 		return self::parseXML($request['response']);
 	}
@@ -294,11 +269,7 @@ class PrestaShopWebservice
 			$url_params = array();
 			if (isset($options['id']))
 				$url .= '/'.$options['id'];
-<<<<<<< HEAD
 
-=======
-				
->>>>>>> e3d1841005371841fd969a07bdba741ba73a7094
 			$params = array('filter', 'display', 'sort', 'limit', 'id_shop', 'id_group_shop');
 			foreach ($params as $p)
 				foreach ($options as $k => $o)
