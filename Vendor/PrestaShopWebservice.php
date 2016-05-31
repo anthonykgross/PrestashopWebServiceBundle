@@ -45,7 +45,7 @@ class PrestaShopWebservice
 	protected $version;
 	/** @var array compatible versions of PrestaShop Webservice */
 	const psCompatibleVersionsMin = '1.4.0.0';
-	const psCompatibleVersionsMax = '1.6.0.14';
+	const psCompatibleVersionsMax = '1.6.1.5';
 
 	/**
 	 * PrestaShopWebservice constructor. Throw an exception when CURL is not installed/activated
@@ -190,8 +190,9 @@ class PrestaShopWebservice
 	{
 		if ($response != '')
 		{
+			libxml_clear_errors();
 			libxml_use_internal_errors(true);
-			$xml = simplexml_load_string($response);
+			$xml = simplexml_load_string($response,'SimpleXMLElement', LIBXML_NOCDATA);
 			if (libxml_get_errors())
 			{
 				$msg = var_export(libxml_get_errors(), true);
